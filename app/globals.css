@@ -1,0 +1,19 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-bg: #090b0f;
+  --color-surface: #0f131a;
+  --color-text: #e6ebf2;
+  --color-text-muted: #93a0b0;
+  --color-accent: #7fd6e6;
+  --font-display: var(--font-barlow-condensed);
+  --font-body: var(--font-barlow);
+  --font-data: var(--font-ibm-plex-mono);
+}
+
+body {
+  background: #090b0f;
+  color: #e6ebf2;
+  font-family: var(--font-barlow), system-ui, sans-serif;
+}
+
