@@ -230,3 +230,52 @@ export function writeCall(record: CallRecord, storage?: StorageLike | null): voi
     return;
   }
 }
+
+/** Writes a whole list through the same safe path writeCall uses. */
+function writeAll(records: CallRecord[], store: StorageLike): void {
+  try {
+    store.setItem(STORAGE_KEY, JSON.stringify(records));
+  } catch {
+    return;
+  }
+}
+
+/**
+ * Merges a patch into one saved call and writes the whole list back.
+ * Returns the updated record, or null when the id is not in the store.
+ * Never throws: a missing storage, a malformed store, or a failed write
+ * all return null.
+ */
+export function updateCall(
+  id: string,
+  patch: Partial<CallRecord>,
+  storage?: StorageLike | null,
+): CallRecord | null {
+  const store = storage === undefined ? getDefaultStorage() : storage;
+  if (!store || typeof id !== "string" || id === "") {
+    return null;
+  }
+  const records = readCalls(store);
+  const index = records.findIndex((record) => record.id === id);
+  if (index === -1) {
+    return null;
+  }
+  const merged: CallRecord = { ...records[index], ...patch, id: records[index].id };
+  const normalized = normalizeRecord(merged);
+  if (!normalized) {
+    return null;
+  }
+  const next = records.slice();
+  next[index] = normalized;
+  writeAll(next, store);
+  return normalized;
+}
+
+/** Marks one saved call settled with a yes or no outcome. */
+export function setResolved(
+  id: string,
+  outcomeYes: boolean,
+  storage?: StorageLike | null,
+): CallRecord | null {
+  return updateCall(id, { resolved: true, outcomeYes }, storage);
+}

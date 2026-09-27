@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { makeId, readCalls, STORAGE_KEY, writeCall } from "./calls";
+import {
+  makeId,
+  readCalls,
+  setResolved,
+  STORAGE_KEY,
+  updateCall,
+  writeCall,
+} from "./calls";
 import type { CallRecord } from "./calls";
 
 type MemoryStorage = {
@@ -92,5 +99,63 @@ describe("writeCall then readCalls", () => {
         outcomeYes: null,
       },
     ]);
+  });
+});
+
+describe("updateCall", () => {
+  it("merges a patch and reads it back from the store", () => {
+    const store = memoryStorage();
+    const record = sampleCall({ id: "call-a" });
+    writeCall(record, store);
+    const updated = updateCall("call-a", { reason: "Revised note" }, store);
+    expect(updated?.reason).toBe("Revised note");
+    expect(readCalls(store)[0]).toEqual({ ...record, reason: "Revised note" });
+  });
+
+  it("returns null for a missing id and never throws", () => {
+    const store = memoryStorage();
+    writeCall(sampleCall({ id: "call-a" }), store);
+    expect(updateCall("call-missing", { reason: "nope" }, store)).toBeNull();
+    expect(updateCall("", { reason: "nope" }, store)).toBeNull();
+    expect(updateCall("call-a", { reason: "nope" }, null)).toBeNull();
+    expect(readCalls(store)[0]?.reason).toBe(
+      "ETF inflow trend plus shrinking exchange supply.",
+    );
+  });
+
+  it("does not throw on a malformed store", () => {
+    const store = memoryStorage("not json at all");
+    expect(updateCall("call-a", { reason: "nope" }, store)).toBeNull();
+    expect(setResolved("call-a", true, store)).toBeNull();
+  });
+});
+
+describe("setResolved", () => {
+  it("sets resolved and outcomeYes, and reopens back to open", () => {
+    const store = memoryStorage();
+    writeCall(sampleCall({ id: "call-a" }), store);
+
+    const settled = setResolved("call-a", true, store);
+    expect(settled?.resolved).toBe(true);
+    expect(settled?.outcomeYes).toBe(true);
+    expect(readCalls(store)[0]?.outcomeYes).toBe(true);
+
+    const no = setResolved("call-a", false, store);
+    expect(no?.outcomeYes).toBe(false);
+
+    const reopened = updateCall(
+      "call-a",
+      { resolved: false, outcomeYes: null },
+      store,
+    );
+    expect(reopened?.resolved).toBe(false);
+    expect(reopened?.outcomeYes).toBeNull();
+    expect(readCalls(store)[0]?.resolved).toBe(false);
+  });
+
+  it("returns null when the id is not in the store", () => {
+    const store = memoryStorage();
+    writeCall(sampleCall({ id: "call-a" }), store);
+    expect(setResolved("call-zzz", true, store)).toBeNull();
   });
 });
