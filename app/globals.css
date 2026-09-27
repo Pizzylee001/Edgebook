@@ -3,9 +3,18 @@
 @theme inline {
   --color-bg: #090b0f;
   --color-surface: #0f131a;
+  --color-raised: #151b24;
+  --color-hairline: #232b36;
+  --color-hairline-soft: #18202a;
   --color-text: #e6ebf2;
   --color-text-muted: #93a0b0;
+  --color-text-faint: #63707f;
   --color-accent: #7fd6e6;
+  --color-accent-ink: #06181a;
+  --color-accent-soft: rgba(127, 214, 230, 0.12);
+  --color-market: #8593a3;
+  --color-positive: #4ed0a0;
+  --color-negative: #f0766b;
   --font-display: var(--font-barlow-condensed);
   --font-body: var(--font-barlow);
   --font-data: var(--font-ibm-plex-mono);

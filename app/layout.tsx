@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Barlow, Barlow_Condensed, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
+import AppRail from "./components/app-rail";
 
 const barlowCondensed = Barlow_Condensed({
   variable: "--font-barlow-condensed",
@@ -35,7 +36,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${barlowCondensed.variable} ${barlow.variable} ${plexMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full font-body">{children}</body>
+      <body className="min-h-full bg-bg font-body text-text">
+        <div className="min-h-full md:grid md:grid-cols-[248px_1fr]">
+          <AppRail />
+          <main className="min-w-0 pb-[104px] md:pb-0">{children}</main>
+        </div>
+      </body>
     </html>
   );
 }

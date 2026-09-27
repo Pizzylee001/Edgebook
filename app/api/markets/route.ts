@@ -16,7 +16,7 @@ const NANSEN_SCREENER_URL =
   "https://api.nansen.ai/api/v1/prediction-market/market-screener";
 
 const SCREENER_BODY = JSON.stringify({
-  pagination: { page: 1, per_page: 10 },
+  pagination: { page: 1, per_page: 50 },
 });
 
 export const dynamic = "force-dynamic";
