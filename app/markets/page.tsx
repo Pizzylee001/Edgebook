@@ -23,9 +23,7 @@ import {
   readTags,
   type MarketLike,
 } from "@/lib/format";
-
-/** Local storage key for saved calls. The journal phase writes it. */
-const CALLS_STORAGE_KEY = "edgbook.calls";
+import { STORAGE_KEY as CALLS_STORAGE_KEY } from "@/lib/calls";
 
 const CAPTION_HEAD =
   "font-body text-[13px] font-medium uppercase tracking-[0.1em] text-text-faint";
