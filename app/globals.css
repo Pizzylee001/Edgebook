@@ -8,7 +8,7 @@
   --color-hairline-soft: #18202a;
   --color-text: #e6ebf2;
   --color-text-muted: #93a0b0;
-  --color-text-faint: #63707f;
+  --color-text-faint: #7f8c9c;
   --color-accent: #7fd6e6;
   --color-accent-ink: #06181a;
   --color-accent-soft: rgba(127, 214, 230, 0.12);
@@ -25,4 +25,50 @@ body {
   color: #e6ebf2;
   font-family: var(--font-barlow), system-ui, sans-serif;
 }
+
+/* Background atmosphere layer */
+.app-bg-void {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.app-bg-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(to right, rgba(147, 160, 176, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(147, 160, 176, 0.05) 1px, transparent 1px);
+  background-size: 44px 44px;
+  -webkit-mask-image: radial-gradient(120% 90% at 75% 0%, #000 0%, transparent 78%);
+  mask-image: radial-gradient(120% 90% at 75% 0%, #000 0%, transparent 78%);
+}
+
+.app-bg-backlight {
+  position: absolute;
+  left: 50%;
+  top: 38%;
+  width: 900px;
+  height: 620px;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(closest-side, rgba(127, 214, 230, 0.10), transparent 72%);
+}
+
+.app-bg-cells {
+  position: absolute;
+  inset: 0;
+}
+
+.app-bg-cell {
+  position: absolute;
+  width: 44px;
+  height: 44px;
+  background: rgba(127, 214, 230, 0.10);
+  opacity: 0;
+  transition: opacity 700ms cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity;
+}
+
 

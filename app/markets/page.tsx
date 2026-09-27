@@ -515,7 +515,7 @@ export default function MarketsPage() {
             Markets
           </h1>
           <p className="max-w-[62ch] text-[15.5px] leading-[1.6] text-text-muted">
-            Discover opens with the live-fact strip, then a dense table.
+            Pick a live Polymarket market, then log the probability you believe. The price and the crowd are frozen at the moment you commit.
           </p>
         </div>
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 pt-2 font-data text-[11px] font-medium uppercase tracking-[0.1em] text-text-faint">
