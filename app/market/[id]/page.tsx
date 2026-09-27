@@ -34,6 +34,12 @@ const CAPTION_HEAD =
 
 const PANEL = "rounded-xl border border-hairline bg-surface p-5";
 
+const CONFIRMED_PANEL =
+  "rounded-xl border border-positive/40 bg-surface p-5";
+
+const GHOST_BUTTON =
+  "inline-flex min-h-[44px] items-center justify-center rounded-lg border border-hairline bg-transparent px-4 font-body text-[14px] font-semibold text-text transition-colors duration-150 hover:border-accent/60 hover:text-accent focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg";
+
 const PRIMARY_BUTTON =
   "inline-flex min-h-[44px] w-full items-center justify-center rounded-lg bg-accent px-4 font-body text-[14px] font-semibold text-accent-ink transition-colors duration-150 hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg";
 
@@ -228,11 +234,41 @@ function PriceChart({ closes }: { closes: number[] }) {
   );
 }
 
-function RingDial({ percent }: { percent: number }) {
-  const clamped = Math.min(100, Math.max(0, percent));
+function CheckTick({ size, className }: { size: number; className: string }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2.4}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="M20 6 9 17l-5-5" />
+    </svg>
+  );
+}
+
+/** ISO time in a readable local form, for example 2026-09-27 13:42 UTC. */
+function readableTime(iso: string): string {
+  const parsed = new Date(iso);
+  if (Number.isNaN(parsed.getTime())) {
+    return iso;
+  }
+  const stamp = parsed.toISOString().slice(0, 16).replace("T", " ");
+  return `${stamp} UTC`;
+}
+
+function RingDial({ percent }: { percent: number | null }) {
+  const clamped = percent === null ? 0 : Math.min(100, Math.max(0, percent));
   const radius = 65;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference * (1 - clamped / 100);
+  const empty = percent === null;
   return (
     <div className="relative flex-none">
       <svg viewBox="0 0 150 150" width="118" height="118" aria-hidden="true" className="-rotate-90">
@@ -240,7 +276,11 @@ function RingDial({ percent }: { percent: number }) {
         <circle cx="75" cy="75" r={radius} fill="none" stroke="#7FD6E6" strokeWidth="11" strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={offset} style={{ transition: "stroke-dashoffset 900ms cubic-bezier(0.16, 1, 0.3, 1)" }} />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <b className="font-data text-[24px] font-semibold tabular-nums text-text">{Math.round(clamped)}%</b>
+        {empty ? (
+          <b className="font-data text-[20px] font-semibold text-text-faint">--</b>
+        ) : (
+          <b className="font-data text-[24px] font-semibold tabular-nums text-text">{Math.round(clamped)}%</b>
+        )}
         <span className="font-body text-[10.5px] uppercase tracking-[0.08em] text-text-faint">your call</span>
       </div>
     </div>
@@ -265,10 +305,9 @@ export default function MarketDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [probability, setProbability] = useState("");
-  const [touched, setTouched] = useState(false);
   const [reason, setReason] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
-  const [savedStamp, setSavedStamp] = useState<string | null>(null);
+  const [logged, setLogged] = useState<CallRecord | null>(null);
 
   const load = useCallback(async () => {
     if (!marketId) {
@@ -323,12 +362,6 @@ export default function MarketDetailPage() {
   const holders = useMemo(() => readHolders(payload?.holders), [payload]);
   const question = market ? textOf(market.question) : "";
 
-  useEffect(() => {
-    if (payload && !touched && impliedPercent !== null) {
-      setProbability(String(impliedPercent));
-    }
-  }, [payload, impliedPercent, touched]);
-
   const parsedProbability = useMemo(() => {
     if (probability.trim() === "") {
       return null;
@@ -345,7 +378,7 @@ export default function MarketDetailPage() {
   const helperLine = impliedPercent === null
     ? "The market has no implied price to compare against yet."
     : parsedProbability === null
-      ? `The market implies ${impliedPercent}%. Enter 0 to 100.`
+      ? "Enter 0 to 100. Your call is separate from the market price above."
       : gap === 0
         ? `The market implies ${impliedPercent}%. You match the market.`
         : gap !== null && gap > 0
@@ -354,7 +387,7 @@ export default function MarketDetailPage() {
 
   const commit = useCallback(() => {
     setFormError(null);
-    setSavedStamp(null);
+    setLogged(null);
     if (!market || !marketId) {
       setFormError("Market data is not ready yet. Retry, then commit.");
       return;
@@ -383,8 +416,15 @@ export default function MarketDetailPage() {
       outcomeYes: null,
     };
     writeCall(record);
-    setSavedStamp(`Call saved to this browser. Snapshot frozen at ${implied === null ? "n/a" : `${Math.round(implied * 100)}%`} implied.`);
+    setLogged(record);
   }, [holders, implied, market, marketId, parsedProbability, question, reason]);
+
+  const resetPanel = useCallback(() => {
+    setProbability("");
+    setReason("");
+    setFormError(null);
+    setLogged(null);
+  }, []);
 
   if (loading) {
     return (
@@ -427,9 +467,18 @@ export default function MarketDetailPage() {
   }
 
   const holderLines = holders.map(holderDisplay).filter((line): line is string => line !== null).slice(0, 3);
-  const gapText = gap === null ? "n/a" : gap > 0 ? `+${gap} pts` : gap < 0 ? `${gap} pts` : "0 pts";
-  const yourCallText = parsedProbability === null ? "n/a" : `${Math.round(parsedProbability)}%`;
+  const gapText = gap === null ? null : gap > 0 ? `+${gap} pts` : gap < 0 ? `${gap} pts` : "0 pts";
+  const yourCallText = parsedProbability === null ? "not set" : `${Math.round(parsedProbability)}%`;
   const marketCallText = impliedPercent === null ? "n/a" : `${impliedPercent}%`;
+  const loggedGapText =
+    logged === null || logged.commitImplied === null
+      ? null
+      : (() => {
+          const diff = Math.round(
+            logged.probability - logged.commitImplied * 100,
+          );
+          return diff > 0 ? `+${diff} pts` : diff < 0 ? `${diff} pts` : "0 pts";
+        })();
 
   return (
     <div className="mx-auto flex w-full max-w-[1200px] flex-col px-5 py-8 sm:px-6 sm:py-10">
@@ -472,28 +521,125 @@ export default function MarketDetailPage() {
           </section>
         </div>
         <div className="order-2 flex min-w-0 flex-col gap-[22px]">
+          {logged ? (
+            <div
+              role="status"
+              aria-live="polite"
+              className="flex items-start gap-3 rounded-[10px] border border-positive/40 bg-positive/10 px-4 py-3"
+            >
+              <CheckTick size={18} className="mt-[1px] flex-none text-positive" />
+              <p className="m-0 text-[13.5px] leading-[1.55] text-text-muted">
+                <b className="font-semibold text-positive">Call logged.</b>{" "}
+                Frozen to this browser. Your open calls went up by one.
+              </p>
+            </div>
+          ) : null}
+
+          {logged ? (
+            <section
+              aria-labelledby="log-a-call"
+              className={CONFIRMED_PANEL}
+            >
+              <div className="flex items-center gap-[10px]">
+                <CheckTick size={22} className="flex-none text-positive" />
+                <h2
+                  id="log-a-call"
+                  className="m-0 font-display text-[22px] font-semibold uppercase text-positive"
+                >
+                  Call logged
+                </h2>
+              </div>
+              <p className="mt-1.5 text-[14px] leading-[1.6] text-text-muted">
+                You said{" "}
+                <b className="font-semibold text-text">
+                  {Math.round(logged.probability)}%
+                </b>
+                . The market implied{" "}
+                <b className="font-semibold text-text">
+                  {formatPercentFromProbability(logged.commitImplied)}
+                </b>
+                {loggedGapText === null ? (
+                  <>, frozen with your call.</>
+                ) : (
+                  <>, a gap of {loggedGapText}.</>
+                )}{" "}
+                Snapshot frozen at{" "}
+                {formatPercentFromProbability(logged.commitImplied)} implied.
+              </p>
+              <dl className="mt-3.5 grid grid-cols-1 gap-x-4 gap-y-[9px] border-y border-hairline py-3.5 text-[13.5px] min-[480px]:grid-cols-[1fr_auto]">
+                <dt className="text-text-muted">Your call</dt>
+                <dd className="font-data tabular-nums text-accent min-[480px]:text-right">
+                  {Math.round(logged.probability)}%
+                </dd>
+                <dt className="text-text-muted">Market at commit</dt>
+                <dd className="font-data tabular-nums text-text min-[480px]:text-right">
+                  {formatPercentFromProbability(logged.commitImplied)}
+                </dd>
+                <dt className="text-text-muted">Liquidity frozen</dt>
+                <dd className="font-data tabular-nums text-text min-[480px]:text-right">
+                  {formatUsd(logged.commitLiquidity)}
+                </dd>
+                <dt className="text-text-muted">Traders 24h</dt>
+                <dd className="font-data tabular-nums text-text min-[480px]:text-right">
+                  {formatCount(logged.commitTraders24h)}
+                </dd>
+                <dt className="text-text-muted">Logged at</dt>
+                <dd className="font-data tabular-nums text-text min-[480px]:text-right">
+                  {readableTime(logged.committedAt)}
+                </dd>
+              </dl>
+              <div className="mt-4 flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  onClick={resetPanel}
+                  className={GHOST_BUTTON}
+                >
+                  Log another call
+                </button>
+                <Link
+                  href="/markets"
+                  className={`inline-flex min-h-[44px] items-center font-body text-[14px] font-semibold text-accent underline-offset-4 hover:underline ${FOCUS_RING}`}
+                >
+                  Back to Markets
+                </Link>
+              </div>
+            </section>
+          ) : (
           <section aria-labelledby="log-a-call" className={PANEL}>
             <h2 id="log-a-call" className={CAPTION_HEAD}>Log a call</h2>
             <p className="mt-3 text-[14px] leading-[1.5] text-text-muted">{question}</p>
+            <p className="mt-2.5 font-data text-[12px] leading-[1.5] tabular-nums text-text-muted">
+              Market implies{" "}
+              <b className="font-semibold text-text">
+                {formatPercentFromProbability(implied)}
+              </b>{" "}
+              &middot; liquidity {formatUsd(market.liquidity)}
+            </p>
             <label htmlFor="probability" className="mt-4 block text-[13px] text-text-muted">Your probability, percent</label>
-            <input id="probability" type="number" min={0} max={100} value={probability} onChange={(event) => { setTouched(true); setProbability(event.target.value); }} className={`mt-[7px] ${INPUT}`} />
+            <input id="probability" type="number" min={0} max={100} value={probability} onChange={(event) => setProbability(event.target.value)} placeholder="e.g. 52" className={`mt-[7px] ${INPUT}`} />
             <p className="mt-[6px] text-[12px] leading-[1.6] text-text-faint">{helperLine}</p>
             <label htmlFor="reason" className="mt-4 block text-[13px] text-text-muted">One line of reasoning</label>
             <textarea id="reason" rows={3} value={reason} onChange={(event) => setReason(event.target.value)} placeholder="One line on why you differ from the market." className={`mt-[7px] ${INPUT}`} />
-            <div className="mt-4 flex items-center gap-[18px]">
-              <RingDial percent={parsedProbability ?? 0} />
-              <p className="m-0 font-data text-[12px] leading-[1.7] tabular-nums text-text-muted">market {marketCallText} to your call {yourCallText}<br />gap {gapText}</p>
+            <div className="mt-[18px] flex items-center gap-[18px]">
+              <RingDial percent={parsedProbability} />
+              <p className="m-0 font-data text-[12px] leading-[1.7] tabular-nums text-text-muted">
+                market <b className="font-semibold text-text">{marketCallText}</b>
+                <br />
+                your call{" "}
+                <b className="font-semibold text-text">{yourCallText}</b>
+                {gapText === null ? null : (
+                  <>
+                    <br />
+                    gap <b className="font-semibold text-text">{gapText}</b>
+                  </>
+                )}
+              </p>
             </div>
             <button type="button" onClick={commit} className={`mt-4 ${PRIMARY_BUTTON}`}>Commit call and snapshot market</button>
             {formError ? (<p role="alert" className="mt-2 text-[12px] leading-[1.6] text-negative">{formError}</p>) : null}
-            {savedStamp ? (
-              <div className="mt-2">
-                <p role="status" className="text-[12px] leading-[1.6] text-text-muted">{savedStamp}</p>
-                <Link href="/markets" className={`mt-1 inline-flex min-h-[44px] items-center font-body text-[14px] font-semibold text-accent underline-offset-4 hover:underline ${FOCUS_RING}`}>Back to Markets</Link>
-              </div>
-            ) : null}
             <p className="mt-3 text-[12px] leading-[1.6] text-text-faint">Saved in this browser only. No sign in, no wallet, no server storage. Market data from the Nansen API.</p>
           </section>
+          )}
         </div>
       </div>
       <Link href="/markets" className={`mt-8 inline-flex min-h-[44px] items-center self-start font-body text-[14px] font-semibold text-accent underline-offset-4 hover:underline ${FOCUS_RING}`}>Back to Markets</Link>
