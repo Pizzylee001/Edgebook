@@ -29,6 +29,9 @@ export const metadata: Metadata = {
   title: "Edgebook",
   description:
     "A personal forecasting desk for Polymarket markets, built on the Nansen API.",
+  icons: {
+    icon: "/icon.svg",
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
