@@ -348,7 +348,25 @@ Light / Dark / Both. Chosen from brand and users (antislop R-21); no "dark becau
 - Design read:
 - Notes:
 
-## Entries (historical imports; do not append here)
+## Entries
+
+### 2026-09-27 — Edgebook (shipped)
+- Product type: Analytics Dashboard (catalog entry), surface mode Operate
+- Style: Dimensional Layering, cold dark field, instrument structure
+- Palette: #090B0F, #0F131A, #151B24, #232B36, #E6EBF2, #93A0B0, #7F8C9C, #7FD6E6 (family: Cold luxury, ice-cyan accent)
+- Fonts: Sports/Fitness, Barlow Condensed + Barlow, with IBM Plex Mono as the data face
+- Theme: Dark
+- Dials: VARIANCE 5 / MOTION 4 / DENSITY 8 | ENERGY 1 / RHYTHM 2 / MOTION 2
+- Fingerprint: sticky or pinned heading / single column / hairline rule / outlined button / none image / none reveal
+- Landing pattern: none, Operate surface with task-derived order
+- Nav / footer: N3 side-rail / Ft2 inline single line
+- Motion tier: Subtle
+- Background & depth: dark void with faint 44px measurement grid masked radially, soft radial backlight, low-opacity ambient cell flicker (disabled on prefers-reduced-motion). Layered depth with 1px hairlines, no drop shadows.
+- Signature: Edge dial (circular calibrated arc gauge reflecting edge score / probability)
+- Design read: Reading this as: an Operate surface for active Polymarket forecasters, with a precise instrument-and-record language on a cold dark field, leaning toward Dimensional Layering with an ice-cyan accent.
+- Notes: Built for Nansen Meridian Buildathon. First prediction-market call ledger scoring Brier calibration and edge against market price at commit time. Replaced generic blue with ice-cyan #7FD6E6, tuned textFaint to #7F8C9C for WCAG AA compliance.
+
+## Historical Entries (reference only; do not append here)
 
 These entries were imported from project builds before the pack ledger became read-only. They are history only. New entries go to the current project's `design-system/LEDGER.md`, never to this file.
 
